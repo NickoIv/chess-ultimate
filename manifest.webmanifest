@@ -1,0 +1,16 @@
+{
+  "name": "Chess Ultimate Pro — Grandmaster Edition",
+  "short_name": "Chess Ultimate",
+  "description": "Премиальные шахматы с ИИ, честными правилами, статистикой и офлайн-режимом.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#071510",
+  "theme_color": "#071510",
+  "orientation": "any",
+  "lang": "ru",
+  "categories": ["games", "board"],
+  "icons": [
+    {"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}

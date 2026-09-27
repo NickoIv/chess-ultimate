@@ -1,0 +1,16 @@
+/* Commercial boundary: UI asks this one service, never scattered purchase flags. */
+const Analytics={track(name,data={}){try{console.debug('[Chess Ultimate]',name,{...data,at:new Date().toISOString()})}catch(e){}}};
+const Entitlements={
+  KEY:'chess_entitlements_v1',
+  get(){try{return{tier:'FREE',removeAds:false,updatedAt:null,...JSON.parse(localStorage.getItem(this.KEY)||'{}')}}catch(e){return{tier:'FREE',removeAds:false}}},
+  hasRemoveAds(){const e=this.get();return e.removeAds||e.tier==='PRO'},isPro(){return this.get().tier==='PRO'},canUseDeepReview(){return this.isPro()},
+  /* Native billing is the only production writer. Browser storage is a cache, not proof of ownership. */
+  applyVerifiedPurchase(sku,purchaseToken){if(!purchaseToken)return false;const current=this.get(),next=sku===CommercialProducts.PRO_LIFETIME?{...current,tier:'PRO',removeAds:true,updatedAt:new Date().toISOString()}:{...current,removeAds:true,updatedAt:new Date().toISOString()};localStorage.setItem(this.KEY,JSON.stringify(next));return true},
+  async restore(){Analytics.track('restore_purchases');showToast('Восстанавливаю покупки через Google Play…');return false}
+};
+const CommercialProducts={REMOVE_ADS:'remove_ads_lifetime',PRO_LIFETIME:'pro_lifetime'};
+function openPaywall(){Analytics.track('paywall_viewed');const existing=document.getElementById('modal-paywall');if(existing)existing.classList.add('active');}
+function closePaywall(){document.getElementById('modal-paywall')?.classList.remove('active')}
+function purchaseProduct(sku){Analytics.track(sku===CommercialProducts.PRO_LIFETIME?'pro_purchase_started':'remove_ads_purchase_started');showToast('Покупки Google Play будут доступны после создания товаров в Play Console.');}
+window.addEventListener('DOMContentLoaded',()=>{document.querySelector('.app-container')?.insertAdjacentHTML('beforeend',`<div class="modal-overlay" id="modal-paywall"><div class="modal paywall"><span class="modal-icon">♛</span><div class="modal-title">Chess Ultimate Pro</div><div class="modal-text">Разовая покупка. Без подписки и без скрытых списаний.</div><div class="paywall-plan"><strong>Бесплатно</strong><span>Полная игра, ИИ, Академия и полезный быстрый разбор.</span></div><div class="paywall-plan featured"><strong>PRO LIFETIME</strong><span>Полный разбор партий, все ошибки для тренировки, глубокий анализ и отсутствие принудительной рекламы.</span><button class="btn btn-primary" onclick="purchaseProduct(CommercialProducts.PRO_LIFETIME)">PRO LIFETIME — цена Google Play</button></div><div class="paywall-plan"><strong>Убрать рекламу</strong><span>Разовая покупка, когда рекламный модуль будет подключён.</span><button class="btn btn-secondary" onclick="purchaseProduct(CommercialProducts.REMOVE_ADS)">Убрать рекламу — цена Google Play</button></div><button class="coach-action" onclick="Entitlements.restore()">Восстановить покупки</button><div class="paywall-links">Политика конфиденциальности · Открытые лицензии</div><div class="modal-buttons"><button class="btn btn-secondary" onclick="closePaywall()">Закрыть</button></div></div></div>`)});
+Object.assign(window,{Analytics,Entitlements,CommercialProducts,openPaywall,closePaywall,purchaseProduct});
