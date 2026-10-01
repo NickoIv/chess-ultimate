@@ -258,7 +258,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;opacity:.14;b
 @media(max-width:640px){.logo span::after{display:none}.menu-hero{margin:2vh auto 10px}.menu-hero h1{font-size:2.3rem}.menu-grid{grid-template-columns:1fr}.menu-card{min-height:130px}.feature-chip:nth-child(n+4){display:none}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
 /* Final board scale guard: piece silhouette never grows beyond a square on narrow screens. */
-.board{container-type:inline-size}.board .piece{font-size:clamp(1.35rem,11.5cqi,3rem)!important;line-height:.9}.board .piece.black.piece-pawn{scale:.78;translate:0 -1%;filter:drop-shadow(0 2px 1.5px rgba(0,0,0,.32))}
+.board{container-type:inline-size}.board .piece{font-size:clamp(1.35rem,11.5cqi,3rem)!important;line-height:.9}.board .piece.black.piece-p{transform:scale(.72) translateY(-2%);filter:drop-shadow(0 2px 1.5px rgba(0,0,0,.32))}
 @media(max-width:700px){.board .piece{font-size:clamp(1.35rem,11.5cqi,2.45rem)!important}}
 </style>
 <base target="_blank">
