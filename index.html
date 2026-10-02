@@ -258,9 +258,9 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;opacity:.14;b
 @media(max-width:640px){.logo span::after{display:none}.menu-hero{margin:2vh auto 10px}.menu-hero h1{font-size:2.3rem}.menu-grid{grid-template-columns:1fr}.menu-card{min-height:130px}.feature-chip:nth-child(n+4){display:none}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
 /* Final board scale guard: piece silhouette never grows beyond a square on narrow screens. */
-.board{container-type:inline-size}.board .piece{font-size:clamp(1.35rem,11.5cqi,3rem)!important;line-height:.9}.board .piece.black.piece-p{transform:scale(.72) translateY(-2%);filter:drop-shadow(0 2px 1.5px rgba(0,0,0,.32))}
+.board{container-type:inline-size}.board .piece{font-size:clamp(1.35rem,11.5cqi,3rem)!important;line-height:.9}
 @media(max-width:700px){.board .piece{font-size:clamp(1.35rem,11.5cqi,2.45rem)!important}}
-.board .piece.black.piece-p{font-size:clamp(1rem,7cqi,1.85rem)!important;transform:none;line-height:1}
+.board .piece.black.piece-p{color:#17251e;-webkit-text-stroke:1.15px #17251e;transform:none}
 </style>
 <base target="_blank">
 </head>
@@ -339,7 +339,9 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;opacity:.14;b
 
 <div class="toast" id="toast"></div>
 <script>
-const PIECES={'K':'♔','Q':'♕','R':'♖','B':'♗','N':'♘','P':'♙','k':'♚','q':'♛','r':'♜','b':'♝','n':'♞','p':'♟'};
+// Pawns share the same text glyph on both sides; colour is provided by CSS.
+// iOS can render the filled black pawn as a differently proportioned emoji.
+const PIECES={'K':'♔','Q':'♕','R':'♖','B':'♗','N':'♘','P':'♙','k':'♚','q':'♛','r':'♜','b':'♝','n':'♞','p':'♙'};
 const PIECE_VALUES={p:100,n:320,b:330,r:500,q:900,k:20000};
 const PST={p:[[0,0,0,0,0,0,0,0],[50,50,50,50,50,50,50,50],[10,10,20,30,30,20,10,10],[5,5,10,25,25,10,5,5],[0,0,0,20,20,0,0,0],[5,-5,-10,0,0,-10,-5,5],[5,10,10,-20,-20,10,10,5],[0,0,0,0,0,0,0,0]],n:[[-50,-40,-30,-30,-30,-30,-40,-50],[-40,-20,0,0,0,0,-20,-40],[-30,0,10,15,15,10,0,-30],[-30,5,15,20,20,15,5,-30],[-30,0,15,20,20,15,0,-30],[-30,5,10,15,15,10,5,-30],[-40,-20,0,5,5,0,-20,-40],[-50,-40,-30,-30,-30,-30,-40,-50]],b:[[-20,-10,-10,-10,-10,-10,-10,-20],[-10,0,0,0,0,0,0,-10],[-10,0,5,10,10,5,0,-10],[-10,5,5,10,10,5,5,-10],[-10,0,10,10,10,10,0,-10],[-10,10,10,10,10,10,10,-10],[-10,5,0,0,0,0,5,-10],[-20,-10,-10,-10,-10,-10,-10,-20]],r:[[0,0,0,0,0,0,0,0],[5,10,10,10,10,10,10,5],[-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],[-5,0,0,0,0,0,0,-5],[0,0,0,5,5,0,0,0]],q:[[-20,-10,-10,-5,-5,-10,-10,-20],[-10,0,0,0,0,0,0,-10],[-10,0,5,5,5,5,0,-10],[-5,0,5,5,5,5,0,-5],[0,0,5,5,5,5,0,-5],[-10,5,5,5,5,5,0,-10],[-10,0,5,0,0,0,0,-10],[-20,-10,-10,-5,-5,-10,-10,-20]],k:[[-30,-40,-40,-50,-50,-40,-40,-30],[-30,-40,-40,-50,-50,-40,-40,-30],[-30,-40,-40,-50,-50,-40,-40,-30],[-30,-40,-40,-50,-50,-40,-40,-30],[-20,-30,-30,-40,-40,-30,-30,-20],[-10,-20,-20,-20,-20,-20,-20,-10],[20,20,0,0,0,0,20,20],[20,30,10,0,0,10,30,20]]};
 
