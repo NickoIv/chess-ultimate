@@ -42,7 +42,7 @@ const StockfishPro={
   },
   async bestMove(fen,level){
     await this.init();const profile=AI_LEVELS[level]||AI_LEVELS[2];
-    if(this.pending){this.worker.postMessage('stop');this.pending.reject(new Error('Search replaced'));this.pending=null}
+    if(this.pending)throw new Error('Движок занят другим поиском');
     this.worker.postMessage('setoption name Skill Level value '+profile.skill);
     this.worker.postMessage('position fen '+fen);
     return new Promise((resolve,reject)=>{
@@ -52,7 +52,7 @@ const StockfishPro={
   },
   async analyse(fen,time=520){
     await this.init();
-    if(this.pending){this.worker.postMessage('stop');throw new Error('Движок занят другим поиском')}
+    if(this.pending)throw new Error('Движок занят другим поиском');
     this.worker.postMessage('setoption name Skill Level value 20');
     this.worker.postMessage('position fen '+fen);
     return new Promise((resolve,reject)=>{
@@ -80,16 +80,16 @@ function friendlyAIMove(){
 makeAIMove=async function(){
   if(state.gameOver||state.gameMode!=='ai'||state.turn===state.playerColor)return;
   const thinking=document.getElementById('ai-thinking');thinking.classList.add('active');
-  const expectedTurn=state.turn;
+  const expectedTurn=state.turn,expectedFen=boardToFEN(),expectedEpoch=state.gameEpoch;
   try{
     if(state.difficulty===1&&Math.random()<.72){const friendly=friendlyAIMove();if(friendly){executeMove(friendly.from[0],friendly.from[1],friendly.to[0],friendly.to[1],friendly.promotion);return}}
     const uci=await StockfishPro.bestMove(boardToFEN(),state.difficulty),move=uciToMove(uci);
-    if(!move||state.gameOver||state.turn!==expectedTurn)throw new Error('Stale engine move');
+    if(!move||state.gameOver||state.turn!==expectedTurn||state.gameEpoch!==expectedEpoch||boardToFEN()!==expectedFen)throw new Error('Stale engine move');
     const legal=getValidMoves(move.from[0],move.from[1]).some(([r,c])=>r===move.to[0]&&c===move.to[1]);
     if(!legal)throw new Error('Illegal engine move');
     executeMove(move.from[0],move.from[1],move.to[0],move.to[1],move.promotion);
   }catch(error){
-    if(!state.gameOver&&state.turn===expectedTurn){const profile=AI_LEVELS[state.difficulty]||AI_LEVELS[2],fallback=findBestMove(profile.skill<5?2:profile.skill<12?3:4);if(fallback)executeMove(fallback.from[0],fallback.from[1],fallback.to[0],fallback.to[1])}
+    if(!state.gameOver&&state.gameMode==='ai'&&state.turn===expectedTurn&&state.gameEpoch===expectedEpoch&&boardToFEN()===expectedFen){const profile=AI_LEVELS[state.difficulty]||AI_LEVELS[2],fallback=findBestMove(profile.skill<5?2:profile.skill<12?3:4);if(fallback)executeMove(fallback.from[0],fallback.from[1],fallback.to[0],fallback.to[1])}
   }finally{thinking.classList.remove('active')}
 };
 
@@ -121,7 +121,7 @@ function captureMoveVisual(fromRow,fromCol,toRow,toCol){
   const from=document.querySelector(`.square[data-row="${fromRow}"][data-col="${fromCol}"]`),to=document.querySelector(`.square[data-row="${toRow}"][data-col="${toCol}"]`);if(!from||!to)return null;
   const moving=from.querySelector('.piece');if(!moving)return null;let captured=to.querySelector('.piece'),captureRect=to.getBoundingClientRect();
   const piece=state.board[fromRow][fromCol];if(!captured&&typeOf(piece)==='p'&&fromCol!==toCol){const epRow=piece===piece.toUpperCase()?toRow+1:toRow-1,ep=document.querySelector(`.square[data-row="${epRow}"][data-col="${toCol}"]`);if(ep){captured=ep.querySelector('.piece');captureRect=ep.getBoundingClientRect()}}
-  return{from:from.getBoundingClientRect(),to:to.getBoundingClientRect(),captureRect,movingFontSize:parseFloat(getComputedStyle(moving).fontSize),movingMarkup:moving.querySelector('.pawn-vector')?moving.innerHTML:null,capturedMarkup:captured?.querySelector('.pawn-vector')?captured.innerHTML:null,movingText:moving.textContent||'Пешка',movingClass:moving.className,capturedText:captured&&captured.textContent,capturedClass:captured&&captured.className,isCapture:!!captured};
+  return{from:from.getBoundingClientRect(),to:to.getBoundingClientRect(),captureRect,movingFontSize:parseFloat(getComputedStyle(moving).fontSize),movingMarkup:moving.querySelector('.chess-piece-svg')?moving.innerHTML:null,capturedMarkup:captured?.querySelector('.chess-piece-svg')?captured.innerHTML:null,movingText:moving.textContent||({p:'Пешка',n:'Конь',b:'Слон',r:'Ладья',q:'Ферзь',k:'Король'})[typeOf(piece)],movingClass:moving.className,capturedText:captured&&captured.textContent,capturedClass:captured&&captured.className,isCapture:!!captured};
 }
 
 function spawnCaptureBurst(rect){
@@ -134,16 +134,16 @@ function announceMoveVisual(visual,toRow,toCol){
 }
 
 function animateMoveVisual(visual,toRow,toCol){
-  if(!visual)return;const targetSquare=document.querySelector(`.square[data-row="${toRow}"][data-col="${toCol}"]`),target=targetSquare?.querySelector('.piece'),ghost=document.createElement('div');ghost.className='move-ghost '+(visual.movingClass.includes('white')?'white':'black');if(visual.movingMarkup)ghost.innerHTML=visual.movingMarkup;else ghost.textContent=visual.movingText;ghost.style.cssText+=`left:${visual.from.left}px;top:${visual.from.top}px;width:${visual.from.width}px;height:${visual.from.height}px;font-size:${Math.max(28,visual.from.width*.72)}px`;document.body.appendChild(ghost);if(target)target.style.opacity='0';if(targetSquare)targetSquare.classList.add(visual.isCapture?'capture-target':'arrival-target');
+  if(!visual||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;const targetSquare=document.querySelector(`.square[data-row="${toRow}"][data-col="${toCol}"]`),target=targetSquare?.querySelector('.piece'),ghost=document.createElement('div');ghost.className='move-ghost '+(visual.movingClass.includes('white')?'white':'black');if(visual.movingMarkup)ghost.innerHTML=visual.movingMarkup;else ghost.textContent=visual.movingText;ghost.style.cssText+=`left:${visual.from.left}px;top:${visual.from.top}px;width:${visual.from.width}px;height:${visual.from.height}px;font-size:${Math.max(28,visual.from.width*.72)}px`;document.body.appendChild(ghost);if(target)target.style.opacity='0';if(targetSquare)targetSquare.classList.add(visual.isCapture?'capture-target':'arrival-target');
   if(Number.isFinite(visual.movingFontSize))ghost.style.fontSize=visual.movingFontSize+'px';
   if(visual.isCapture&&(visual.capturedText||visual.capturedMarkup)){const victim=document.createElement('div');victim.className='capture-ghost';if(visual.capturedMarkup)victim.innerHTML=visual.capturedMarkup;else victim.textContent=visual.capturedText;victim.style.cssText=`left:${visual.captureRect.left}px;top:${visual.captureRect.top}px;width:${visual.captureRect.width}px;height:${visual.captureRect.height}px;font-size:${Math.max(28,visual.captureRect.width*.72)}px`;document.body.appendChild(victim);victim.animate([{transform:'scale(1) rotate(0)',filter:'blur(0)',opacity:1},{transform:'translateX(-4px) scale(1.12) rotate(-7deg)',filter:'brightness(1.9)',opacity:1,offset:.32},{transform:'translateX(7px) scale(1.32) rotate(12deg)',filter:'brightness(2.4)',opacity:.78,offset:.54},{transform:'scale(.08) rotate(44deg)',filter:'blur(5px)',opacity:0}],{duration:790,easing:'cubic-bezier(.22,.76,.22,1)'}).finished.finally(()=>victim.remove())}
-  const dx=visual.to.left-visual.from.left,dy=visual.to.top-visual.from.top,duration=visual.isCapture?720:510;ghost.animate([{transform:'translate(0,0) scale(1)',filter:'brightness(1)'},{transform:`translate(${dx*.48}px,${dy*.48}px) scale(${visual.isCapture?1.1:1.05})`,filter:'brightness(1.16)',offset:.48},{transform:`translate(${dx*.86}px,${dy*.86}px) scale(${visual.isCapture?1.28:1.1})`,filter:'brightness(1.35)',offset:visual.isCapture ? .78 : .8},{transform:`translate(${dx}px,${dy}px) scale(1)`,filter:'brightness(1)'}],{duration,easing:'cubic-bezier(.18,.74,.2,1)'}).finished.finally(()=>{ghost.remove();if(target)target.style.opacity='';if(targetSquare)targetSquare.classList.remove('capture-target','arrival-target');if(visual.isCapture)spawnCaptureBurst(visual.to)});
+  const dx=visual.to.left-visual.from.left,dy=visual.to.top-visual.from.top,duration=visual.isCapture?720:510;ghost.animate([{transform:'translate(0,0) scale(1)',filter:'brightness(1)'},{transform:`translate(${dx*.48}px,${dy*.48}px) scale(${visual.isCapture?1.1:1.05})`,filter:'brightness(1.16)',offset:.48},{transform:`translate(${dx*.86}px,${dy*.86}px) scale(${visual.isCapture?1.08:1.04})`,filter:'brightness(1.35)',offset:visual.isCapture ? .78 : .8},{transform:`translate(${dx}px,${dy}px) scale(1)`,filter:'brightness(1)'}],{duration,easing:'cubic-bezier(.18,.74,.2,1)'}).finished.finally(()=>{ghost.remove();if(target)target.style.opacity='';if(targetSquare)targetSquare.classList.remove('capture-target','arrival-target');if(visual.isCapture)spawnCaptureBurst(visual.to)});
 }
 
 const executeWithRules=executeMove;
 executeMove=function(fromRow,fromCol,toRow,toCol,promotionChoice){
   const before=state.moveHistory.length,visual=captureMoveVisual(fromRow,fromCol,toRow,toCol);executeWithRules(fromRow,fromCol,toRow,toCol,promotionChoice);
-  if(state.moveHistory.length===before)return;announceMoveVisual(visual,toRow,toCol);animateMoveVisual(visual,toRow,toCol);
+  if(state.moveHistory.length===before)return;if(visual)announceMoveVisual(visual,toRow,toCol);animateMoveVisual(visual,toRow,toCol);
   const king=state.kingPositions[state.turn],kingSquare=document.querySelector(`.square[data-row="${king[0]}"][data-col="${king[1]}"]`);if(kingSquare&&isInCheck(state.turn)){const wave=document.createElement('span');wave.className='check-wave';kingSquare.appendChild(wave);setTimeout(()=>wave.remove(),700)}
   if(state.gameMode==='online'&&state.onlineConnected&&!state.applyingRemote&&state.online?.conn?.open){state.online.conn.send({type:'move',ply:state.moveHistory.length,from:[fromRow,fromCol],to:[toRow,toCol],promotion:promotionChoice||null})}
 };
