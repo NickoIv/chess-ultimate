@@ -1,17 +1,30 @@
-const CACHE='chess-grandmaster-v16-solid-pieces';
-const ASSETS=['./','./index.html','./piece-art.js?v=16','./responsive.css?v=16','./manifest.webmanifest','./icon.svg','./final-features.css','./final-features.js','./academy.css','./academy-puzzles.js','./review-core.js','./commercial.js','./academy.js','./vendor/peerjs/peerjs.min.js','./vendor/stockfish/stockfish-19-lite-single.js','./vendor/stockfish/stockfish-19-lite-single.wasm'];
-self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));self.skipWaiting()});
-self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('chess-grandmaster-')&&key!==CACHE).map(key=>caches.delete(key)))));self.clients.claim()});
-self.addEventListener('fetch',event=>{
- if(event.request.method!=='GET'||new URL(event.request.url).origin!==self.location.origin)return;
- event.respondWith((async()=>{
-  const cache=await caches.open(CACHE);
-  if(event.request.mode==='navigate'){
-   try{const response=await fetch(event.request);if(response.ok)await cache.put('./index.html',response.clone());return response}
-   catch(error){return(await cache.match('./index.html'))||Response.error()}
-  }
-  const cached=await cache.match(event.request,{ignoreSearch:true});if(cached)return cached;
-  try{const response=await fetch(event.request);if(response.ok)await cache.put(event.request,response.clone());return response}
-  catch(error){return Response.error()}
- })());
+const VERSION = 'chess-ultimate-academy-professional-2026-11-22';
+const CORE = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
+const SCOPE = new URL('./', self.location.href).pathname;
+self.addEventListener('install', event => {
+  event.waitUntil(caches.open(VERSION).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting()));
+});
+self.addEventListener('activate', event => {
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => (k.startsWith('chess-ultimate-') || k.startsWith('chess-grandmaster-')) && k !== VERSION).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+});
+self.addEventListener('fetch', event => {
+  const req = event.request;
+  const url = new URL(req.url);
+  if (req.method !== 'GET' || url.origin !== self.location.origin || !url.pathname.startsWith(SCOPE)) return;
+  event.respondWith((async () => {
+    const cache = await caches.open(VERSION);
+    if (req.mode === 'navigate') {
+      try {
+        const res = await fetch(req);
+        if (res.ok) await cache.put('./index.html', res.clone());
+        return res;
+      } catch (_) {
+        return (await cache.match('./index.html')) || Response.error();
+      }
+    }
+    return (await cache.match(req)) || fetch(req).then(res => {
+      if (res.ok) cache.put(req, res.clone()).catch(() => {});
+      return res;
+    });
+  })());
 });
