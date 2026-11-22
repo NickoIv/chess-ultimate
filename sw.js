@@ -1,5 +1,5 @@
-const VERSION = 'chess-ultimate-academy-professional-2026-11-22';
-const CORE = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
+const VERSION = 'chess-ultimate-academy-brand-2026-11-22-1';
+const CORE = ['./', './index.html', './manifest.webmanifest', './apple-touch-icon.png', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './favicon-32.png'];
 const SCOPE = new URL('./', self.location.href).pathname;
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(VERSION).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting()));
